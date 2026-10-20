@@ -1,0 +1,29 @@
+name: textlint
+
+on:
+  pull_request:
+    paths:
+      - "draft_entries/**.md"
+
+jobs:
+  textlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      - name: Run textlint on changed drafts
+        run: |
+          files=$(git diff --name-only --diff-filter=d "origin/${BASE_REF}...HEAD" -- 'draft_entries/*.md')
+          if [ -z "$files" ]; then
+            echo "No changed drafts."
+            exit 0
+          fi
+          npx textlint $files
+        env:
+          BASE_REF: ${{ github.base_ref }}
